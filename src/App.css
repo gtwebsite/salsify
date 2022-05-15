@@ -1,0 +1,65 @@
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.main-app {
+  width: 100%;
+  max-width: 1200px;
+  margin: 2rem auto 0;
+  border: 1px solid #aaa;
+}
+
+.main-app table {
+  width: 100%;
+  border: 0;
+}
+
+.main-app table td,
+.main-app table th {
+  padding: 0.5rem 1rem;
+}
+
+.main-app table thead tr th {
+  text-align: left;
+  text-transform: capitalize;
+  background-color: #ccc;
+}
+
+.main-app table tbody tr:nth-of-type(odd) td {
+  background-color: #efefef;
+}
+
+.main-app form {
+  padding: 1rem;
+}
+
+.main-app fieldset {
+  border: 0;
+  padding: 0;
+  display: flex;
+}
+
+.main-app fieldset > div:not(:first-child) {
+  margin-left: 1rem;
+}
+
+.main-app fieldset > div:last-child {
+  margin-left: auto;
+}
+
+.main-app input,
+.main-app select {
+  border: 1px solid #aaa;
+  width: 200px;
+  max-width: 100%;
+  padding: 0.25rem 0.5rem;
+}
+
+.main-app input,
+.main-app select:not([multiple]) {
+  height: 2.25rem;
+}
+
+.main-app select[multiple] {
+  height: 4.5rem;
+}
