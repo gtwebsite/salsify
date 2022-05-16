@@ -1,54 +1,69 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import './App.css'
 
-
+// Find match against operators object
 const handleOperators = {
   'equals': (a, b) => {
+    // If against an array
     if (Array.isArray(b) && b.length === 1) {
       return a === b[0]
     }
+
+    // Defaults to strict comparison
     return a === b 
   },
   'greater_than': (a, b) => { return a > b },
   'less_than': (a, b) => { return a < b },
-  'any': (a) => { return !!a },
   'in': (a, b) => {
+    // If against an array
     if (Array.isArray(b)) {
       return b.includes(a)
     }
-    return b.toString().split(', ').includes(a.toString())
+
+    // Defaults against a string with comma-separated
+    return b.toString().split(',').includes(a.toString())
   },
   'contains': (a, b) => { return a.toLowerCase().includes(`${b.toLowerCase()}`) },
 };
 
 
 function App() {
+  // Setting up default values
   // @ts-ignore
   const datastore = window?.datastore 
   const filterDefault = { property: null, operator: null, input: null }
 
+  // Setting state
   const [store] = useState(datastore)
   const [properties] = useState(datastore?.getProperties())
   const [operators, setOperators] = useState([])
   const [products, setProducts] = useState(datastore?.getProducts())
   const [filter, setFilter] = useState(filterDefault)
 
-  console.log('a')
-  setTimeout(() => console.log('b'), 100)
-  setTimeout(() => console.log('c'), 0)
-  console.log('d')
-
+  // Update products list every filter changed
   useEffect(() => {
-    if(!filter.property || !filter.operator || !filter.input) {
+    // Return default products if:
+    // 1) property field is missing
+    // 2) operator field is missing
+    // 3) operator is not `any` or `none` while input is missing
+    if(!filter.property || !filter.operator || (!(filter.operator.id === 'any' || filter.operator.id === 'none') && !filter.input)) {
       setProducts(datastore?.getProducts())
       return
     }
 
+    // Start filtering products
     const newProducts = datastore?.getProducts().filter(({ property_values }) => {
+      // Find if `any`
+      if(filter.operator.id === 'any') {
+        return property_values.find((pv) => pv.property_id === filter.property.id)
+      }
+
+      // Find if `none`
       if(filter.operator.id === 'none') {
         return !property_values.some((pv) => pv.property_id === filter.property.id)
       }
 
+      // Find against handleOperator object
       return property_values.find((pv) => {
         return pv.property_id === filter.property.id && handleOperators[filter.operator.id](pv.value, filter.input.value)
       })
@@ -56,16 +71,20 @@ function App() {
     setProducts(newProducts)
   }, [filter, datastore])
 
+  // Run when select property changed
   const handleSelectProperty = (e) => {
+    // If no value, reset to default
     if(e.target.value === '') {
       setFilter(filterDefault)
       setOperators([])
       return
     }
 
+    // Find property by selected id and set the filter with new property object, force input to null
     const property = properties.find((property) => property.id === Number(e.target.value))
-    setFilter({...filterDefault, property})
+    setFilter(({operator}) => ({property, operator, input: null}))
 
+    // Set operator options based off property selected
     setOperators(() => datastore.getOperators().filter((operator) => {
       if( property.type === 'number' ) {
         return operator.id === 'equals' || operator.id === 'any' || operator.id === 'none' || operator.id === 'in' || operator.id === 'greater_than' || operator.id === 'less_than'
@@ -79,25 +98,35 @@ function App() {
     }))
   }
 
+  // Run when select operator changed
   const handleSelectOperator = (e) => {
+    // Set filter with new operator
     setFilter((prev) => {
+      // If empty, returns operator to null
       if(e.target.value === '') return {...prev, operator: null}
 
+      // Defaults to operator object
       const operator = operators.find((operator) => operator.id === e.target.value)
       return {...prev, operator}
     })
   }
 
+  // Run when input / select value changed
   const handleSelectInput = (e) => {
+    // Set filter with new input value
     setFilter((prev) => {
+      // If missing, set to null
       if(e.target.value === '') return {...prev, input: null}
 
+      // Value defaults to string
       let value = e.target.value
 
+      // If number, format value to number
       if(e.target.type === 'number') {
         value = Number(e.target.value)
       }
 
+      // If multi select, format value to an array
       if(e.target.type === 'select-multiple') {
         value = Array.from(e.target.selectedOptions, option => option.value)
       }
@@ -107,18 +136,23 @@ function App() {
     })
   }
 
+  // Run when clear button clicked
   const handleReset = () => {
     setFilter(filterDefault)
     setOperators([])
   }
 
+  // Component to display the input / multi select
   const InputFilter = useCallback(() => {
+    // If null, returns nothing
     if( !filter?.property ) return null
 
+    // If number, returns number input
     if( filter?.property?.type === 'number') {
       return <input type='number' onChange={handleSelectInput} />
     }
 
+    // If enum, returns multi select
     if( filter?.property?.type === 'enumerated') {
       return (
         <select multiple onChange={handleSelectInput}>
@@ -129,6 +163,7 @@ function App() {
       )
     }
 
+    // Defaults to string input
     return <input type='text' onChange={handleSelectInput} />
   }, [filter?.property])
 
